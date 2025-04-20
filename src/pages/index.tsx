@@ -20,6 +20,7 @@ export default function HeaterControl() {
         const response = await fetch('http://heater.local/heater/current')
         setIsConnected(response.ok)
       } catch (error) {
+        console.error('Error checking connection:', error)
         setIsConnected(false)
       }
     }
@@ -28,7 +29,9 @@ export default function HeaterControl() {
     void checkConnection()
 
     // Set up polling interval
-    const interval = setInterval(checkConnection, 1000)
+    const interval = setInterval(() => {
+      void checkConnection()
+    }, 1000)
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval)
