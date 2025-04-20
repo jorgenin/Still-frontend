@@ -1,16 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Flame, AlertTriangle } from "lucide-react"
+import { Flame, AlertTriangle, WifiOff } from "lucide-react"
 
 export default function HeaterControl() {
   const [power, setPower] = useState<number>(0)
+  const [isConnected, setIsConnected] = useState<boolean>(false)
   const maxPower = 7.2
   const dangerThreshold = 5
   const isDangerZone = power > dangerThreshold
+
+  // Check connection status
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const response = await fetch('http://heater.local/heater/current')
+        setIsConnected(response.ok)
+      } catch (error) {
+        setIsConnected(false)
+      }
+    }
+
+    // Initial check
+    void checkConnection()
+
+    // Set up polling interval
+    const interval = setInterval(checkConnection, 1000)
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval)
+  }, [])
 
   // Calculate percentage for visual indicators
   const powerPercentage = (power / maxPower) * 100
@@ -19,6 +41,8 @@ export default function HeaterControl() {
   const formattedPower = power.toFixed(1)
 
   const updateHeaterPower = async (newPower: number | 'off') => {
+    if (!isConnected) return
+
     try {
       const p = newPower === 'off' ? 'off' : (newPower / maxPower).toString()
       const response = await fetch(`http://heater.local/heater/power?p=${p}`)
@@ -33,19 +57,25 @@ export default function HeaterControl() {
   const handlePowerChange = (values: number[]) => {
     const newPower = values[0] ?? 0
     setPower(newPower)
-    updateHeaterPower(newPower)
+    void updateHeaterPower(newPower)
   }
 
   const handleTurnOff = () => {
     setPower(0)
-    updateHeaterPower('off')
+    void updateHeaterPower('off')
   }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className={`w-full max-w-md ${!isConnected ? 'opacity-50' : ''}`}>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Heater Control</CardTitle>
+          {!isConnected && (
+            <div className="flex items-center justify-center gap-2 text-red-500 mt-2">
+              <WifiOff className="h-4 w-4" />
+              <span className="text-sm font-medium">No device detected</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Power display */}
@@ -98,13 +128,16 @@ export default function HeaterControl() {
                 value={[power]}
                 onValueChange={handlePowerChange}
                 className={`${isDangerZone ? "slider-danger" : ""}`}
+                disabled={!isConnected}
               />
             </div>
           </div>
 
           {/* Power status */}
           <div className="text-center text-sm font-medium">
-            {power === 0 ? (
+            {!isConnected ? (
+              <span className="text-gray-500">Waiting for device connection...</span>
+            ) : power === 0 ? (
               <span className="text-gray-500">Heater is off</span>
             ) : isDangerZone ? (
               <span className="text-red-500">High power consumption!</span>
@@ -120,7 +153,7 @@ export default function HeaterControl() {
               size="lg"
               className="w-full max-w-[200px] gap-2 font-medium"
               onClick={handleTurnOff}
-              disabled={power === 0}
+              disabled={power === 0 || !isConnected}
             >
               <svg
                 viewBox="0 0 24 24"
