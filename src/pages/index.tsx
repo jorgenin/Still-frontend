@@ -17,7 +17,7 @@ export default function HeaterControl() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const response = await fetch('http://heater.local/heater/current')
+        const response = await fetch('//heater.local/heater/current')
         setIsConnected(response.ok)
       } catch (error) {
         console.error('Error checking connection:', error)
@@ -48,7 +48,7 @@ export default function HeaterControl() {
 
     try {
       const p = newPower === 'off' ? 'off' : (newPower / maxPower).toString()
-      const response = await fetch(`http://heater.local/heater/power?p=${p}`)
+      const response = await fetch(`//heater.local/heater/power?p=${p}`)
       if (!response.ok) {
         console.error('Failed to update heater power')
       }
