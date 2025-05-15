@@ -69,7 +69,7 @@ export default function HeaterControl() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+    <main className="flex  flex-col items-center justify-center bg-gray-50 p-4">
       <Card className={`w-full max-w-md ${!isConnected ? 'opacity-50' : ''}`}>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Heater Control</CardTitle>
